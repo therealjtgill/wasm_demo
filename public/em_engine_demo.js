@@ -6002,6 +6002,8 @@ function dbg(text) {
       GLctx.bufferSubData(target, offset, HEAPU8.subarray(data, data+size));
     };
 
+  function _glCheckFramebufferStatus(x0) { return GLctx.checkFramebufferStatus(x0) }
+
   function _glClear(x0) { GLctx.clear(x0) }
 
   function _glClearColor(x0, x1, x2, x3) { GLctx.clearColor(x0, x1, x2, x3) }
@@ -6099,6 +6101,11 @@ function dbg(text) {
       GLctx.enableVertexAttribArray(index);
     };
 
+  var _glFramebufferTexture2D = (target, attachment, textarget, texture, level) => {
+      GLctx.framebufferTexture2D(target, attachment, textarget,
+                                      GL.textures[texture], level);
+    };
+
   var __glGenObject = (n, buffers, createFunction, objectTable
       ) => {
       for (var i = 0; i < n; i++) {
@@ -6116,6 +6123,12 @@ function dbg(text) {
   
   var _glGenBuffers = (n, buffers) => {
       __glGenObject(n, buffers, 'createBuffer', GL.buffers
+        );
+    };
+
+  
+  var _glGenFramebuffers = (n, ids) => {
+      __glGenObject(n, ids, 'createFramebuffer', GL.framebuffers
         );
     };
 
@@ -6659,6 +6672,8 @@ function dbg(text) {
     };
 
   function _glTexParameteri(x0, x1, x2) { GLctx.texParameteri(x0, x1, x2) }
+
+  function _glTexStorage2D(x0, x1, x2, x3, x4) { GLctx.texStorage2D(x0, x1, x2, x3, x4) }
 
   var webglGetUniformLocation = (location) => {
       var p = GLctx.currentProgram;
@@ -8412,6 +8427,8 @@ var wasmImports = {
   /** @export */
   glBufferSubData: _glBufferSubData,
   /** @export */
+  glCheckFramebufferStatus: _glCheckFramebufferStatus,
+  /** @export */
   glClear: _glClear,
   /** @export */
   glClearColor: _glClearColor,
@@ -8440,7 +8457,11 @@ var wasmImports = {
   /** @export */
   glEnableVertexAttribArray: _glEnableVertexAttribArray,
   /** @export */
+  glFramebufferTexture2D: _glFramebufferTexture2D,
+  /** @export */
   glGenBuffers: _glGenBuffers,
+  /** @export */
+  glGenFramebuffers: _glGenFramebuffers,
   /** @export */
   glGenTextures: _glGenTextures,
   /** @export */
@@ -8477,6 +8498,8 @@ var wasmImports = {
   glTexImage2D: _glTexImage2D,
   /** @export */
   glTexParameteri: _glTexParameteri,
+  /** @export */
+  glTexStorage2D: _glTexStorage2D,
   /** @export */
   glUniform1fv: _glUniform1fv,
   /** @export */
