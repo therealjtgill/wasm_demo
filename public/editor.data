@@ -1,0 +1,327 @@
+#version 300 es
+precision mediump float;
+
+layout(location = 0) out vec4 FragColor;
+layout(location = 1) out uint FragEntity;
+
+flat in int vert_entity;
+in vec3 vert_frag_pos;
+in vec3 vert_normal;
+in vec3 vert_color;
+
+uniform vec3 diffuse_light_dir;
+uniform vec3 ambient_light_color;
+uniform float ambient_light_strength;
+
+void main()
+{
+  vec3 shape_color = vert_color;
+  vec3 normal = normalize(vert_normal);
+
+  vec3 diffuse_light_dir_unit = normalize(diffuse_light_dir);
+  float diffuse_strength = max(dot(diffuse_light_dir_unit, normal), 0.0f);
+  vec3 ambient_light = ambient_light_strength * ambient_light_color;
+  vec3 diffuse_light = diffuse_strength * ambient_light_color;
+
+  vec3 lighting = (ambient_light + diffuse_light) * shape_color;
+
+  FragColor = vec4(lighting, 1.0f);
+  FragEntity = uint(vert_entity);
+}
+#version 300 es
+layout (location = 0) in vec3 pos;
+layout (location = 1) in vec3 normal;
+layout (location = 2) in vec4 color;
+layout (location = 3) in mat4 model;
+layout (location = 7) in int entity;
+
+flat out int vert_entity;
+out vec3 vert_frag_pos;
+out vec3 vert_normal;
+out vec3 vert_color;
+
+uniform mat4 projection;
+uniform mat4 view;
+
+void main()
+{
+  vert_color = vec3(color);
+  vert_normal = transpose(inverse(mat3(model))) * normal;
+  vert_frag_pos = vec3(model * vec4(pos, 1.0));
+  vert_entity = entity;
+
+  gl_Position = projection * view * vec4(vert_frag_pos, 1.0);
+}
+#version 300 es
+
+// The implementation of this is tied directly to the mouse picking
+// framebuffer configuration and 'glReadPixels' implementation for OpenGL
+// ES. The output of the fragment shader is four floats in the range [0, 1],
+// but the format of 'glReadPixels' will return:
+//    vec4 f = FragColor;
+//    [f[0] * 255, f[1] * 255, f[2] * 255, f[3] * 255]
+// Note that this is only the case because I've set it up that way. But also
+// OpenGL ES has limitations on the combinations of data types and formats
+// that can be read from a texture bound to a framebuffer.
+
+precision mediump float;
+
+out vec4 FragColor;
+
+flat in int vert_entity;
+
+void main()
+{
+   int mask = 255;
+   int ival0 = (vert_entity >> (8 * 0)) & mask;
+   int ival1 = (vert_entity >> (8 * 1)) & mask;
+   int ival2 = (vert_entity >> (8 * 2)) & mask;
+   int ival3 = (vert_entity >> (8 * 3)) & mask;
+   float fval0 = float(ival0);
+   fval0 = fval0 / 255.f;
+   float fval1 = float(ival1);
+   fval1 = fval1 / 255.f;
+   float fval2 = float(ival2);
+   fval2 = fval2 / 255.f;
+   float fval3 = float(ival3);
+   fval3 = fval3 / 255.f;
+   FragColor = vec4(fval3, fval2, fval1, fval0);
+}
+#version 300 es
+layout (location = 0) in vec3 pos;
+layout (location = 3) in mat4 model;
+layout (location = 7) in int entity;
+
+flat out int vert_entity;
+
+uniform mat4 projection;
+uniform mat4 view;
+
+void main()
+{
+
+  gl_Position = projection * view * model * vec4(pos, 1.0);
+  vert_entity = entity;
+}
+#version 300 es
+precision mediump float;
+precision mediump sampler2DShadow;
+out vec4 FragColor;
+
+flat in int vert_config;
+in vec3 vert_frag_pos;
+in vec3 vert_normal;
+in vec3 vert_color;
+in vec4 vert_frag_pos_light_space;
+
+uniform sampler2DShadow depth_map;
+uniform vec3 hover_color;
+uniform vec3 select_color;
+uniform vec3 shadow_light_dir;
+uniform vec3 diffuse_light_dir;
+uniform vec3 ambient_light_color;
+uniform float ambient_light_strength;
+
+float shadowCalculationPcf(vec4 frag_pos_light_space, float bias)
+{
+   vec3 projection_coords = frag_pos_light_space.xyz / frag_pos_light_space.w;
+
+   projection_coords = projection_coords * 0.5f + 0.5f;
+   projection_coords.z -= bias;
+
+   float closest_depth = texture(depth_map, projection_coords);
+
+   float current_depth = projection_coords.z;
+
+   float shadow = 0.f;
+
+   vec3 texel_size;
+   texel_size.z = 0.f;
+   texel_size.x = float(textureSize(depth_map, 0).x);
+   texel_size.y = float(textureSize(depth_map, 0).y);
+   texel_size.x = 1.0f / texel_size.x;
+   texel_size.y = 1.0f / texel_size.y;
+   for (int i = -1; i <= 1; ++i)
+   {
+      for (int j = -1; j <= 1; ++j)
+      {
+         shadow += texture(depth_map, projection_coords + vec3(i, j, 0) * texel_size);
+      }
+   }
+
+   shadow /= 9.0f;
+
+   return shadow;
+}
+
+float shadowCalculation(vec4 frag_pos_light_space, float bias)
+{
+   vec3 projection_coords = frag_pos_light_space.xyz / frag_pos_light_space.w;
+
+   projection_coords = projection_coords * 0.5f + 0.5f;
+   projection_coords.z -= bias;
+
+   float closest_depth = texture(depth_map, projection_coords);
+   float current_depth = projection_coords.z;
+
+   float shadow = closest_depth;
+   return shadow;
+}
+
+void main()
+{
+   vec3 shape_color = vert_color;
+   vec3 normal = normalize(vert_normal);
+
+   vec3 diffuse_light_dir_unit = normalize(diffuse_light_dir);
+   float diffuse_strength = max(dot(diffuse_light_dir_unit, normal), 0.0f);
+   vec3 ambient_light = ambient_light_strength * ambient_light_color;
+   vec3 diffuse_light = diffuse_strength * ambient_light_color;
+
+   float bias = max(
+      0.05f * (
+         1.0f - dot(normal, normalize(shadow_light_dir))
+      ),
+      0.005f
+   );
+
+   float shadow = shadowCalculationPcf(vert_frag_pos_light_space, bias);
+   shadow = ((vert_config & 1) == 1) ? shadow : 0.f;
+
+   int selection_highlight = (vert_config & (1 << 3));
+   int hover_highlight = (vert_config & (1 << 2));
+
+   vec3 base_color = (hover_highlight > 0) ? hover_color : shape_color;
+
+   vec3 lighting = (ambient_light + (1.0f - shadow) * diffuse_light) * base_color;
+
+   FragColor = vec4(lighting, 1.0f);
+}
+#version 300 es
+layout (location = 0) in vec3 pos;
+layout (location = 1) in vec3 normal;
+layout (location = 2) in vec4 color;
+layout (location = 3) in mat4 model;
+layout (location = 8) in int config;
+
+flat out int vert_config;
+out vec3 vert_frag_pos;
+out vec3 vert_normal;
+out vec3 vert_color;
+out vec4 vert_frag_pos_light_space;
+
+uniform mat4 projection;
+uniform mat4 view;
+uniform mat4 light_space_matrix;
+
+void main()
+{
+   vert_color = vec3(color);
+   vert_frag_pos = vec3(model * vec4(pos, 1.0));
+   vert_normal = transpose(inverse(mat3(model))) * normal;
+   vert_frag_pos_light_space = light_space_matrix * vec4(vert_frag_pos, 1.0);
+   vert_config = config;
+   gl_Position = projection * view * vec4(vert_frag_pos, 1.0);
+}
+#version 300 es
+precision mediump float;
+precision mediump usampler2D;
+
+layout (location = 2) out vec4 out_frag_color;
+
+in vec2 vert_texture_uv;
+
+uniform usampler2D entity_texture;
+uniform vec3 highlight_color;
+
+void main()
+{
+   int i = 0;
+   int j = 0;
+
+   int texture_val = 0;
+   int temp_texture_val = 0;
+
+   vec2 texel_size = vec2(
+      1.f / float(textureSize(entity_texture, 0).x),
+      1.f / float(textureSize(entity_texture, 0).y)
+   );
+
+   vec2 sample_coord = vec2(0.f, 0.f);
+
+   int all_interior = 1;
+
+   for (i = -3; i < 3; ++i)
+   {
+      for (j = -3; j < 3; ++j)
+      {
+         sample_coord.x = min(max((vert_texture_uv.x + float(i) * texel_size.x), 0.f), 1.f);
+         sample_coord.y = min(max((vert_texture_uv.y + float(j) * texel_size.y), 0.f), 1.f);
+         temp_texture_val = int(texture(entity_texture, sample_coord).r);
+         all_interior &= int(temp_texture_val > 0);
+         texture_val = (temp_texture_val > 0) ? temp_texture_val : texture_val;
+      }
+   }
+
+   out_frag_color = vec4(highlight_color, 1.f);
+   out_frag_color *= float((texture_val != 0));
+   out_frag_color.w *= float(1 - all_interior);
+}
+#version 300 es
+precision mediump float;
+
+void main()
+{ }
+#version 300 es
+layout (location = 0) in vec3 aPos;
+layout (location = 1) in vec3 aNormal;
+layout (location = 2) in vec4 aColor;
+layout (location = 3) in mat4 aModel;
+layout (location = 8) in int aConfig;
+
+uniform mat4 light_space_matrix;
+
+void main()
+{
+  gl_Position = light_space_matrix * aModel * vec4(aPos, 1.0);
+  gl_Position.z = ((aConfig & 1) == 1) ? gl_Position.z : 2.f;
+}
+#version 300 es
+precision mediump float;
+precision mediump sampler2D;
+
+out vec4 out_frag_color;
+
+uniform sampler2D uni_texture;
+uniform int uni_config;
+
+in vec2 vert_texture_uv;
+
+void main(void)
+{
+   vec4 frag_color = texture(uni_texture, vert_texture_uv);
+   if ((uni_config & (1 << 0)) > 0)
+   {
+      if (frag_color.w == 0.f)
+      {
+         discard;
+      }
+   }
+
+   out_frag_color = frag_color;
+}
+#version 300 es
+
+layout (location = 0) in vec3 pos;
+layout (location = 1) in vec2 texture_uv;
+
+// Multiplication order is vec4 ndc_pos = Projection * View * Model * vec4(pos, 1.0f);
+uniform mat4 proj_view_model;
+
+out vec2 vert_texture_uv;
+
+void main(void)
+{
+   vert_texture_uv = texture_uv;
+   gl_Position = proj_view_model * vec4(pos, 1.0f);
+}
