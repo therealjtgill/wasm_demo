@@ -69,14 +69,19 @@ precision mediump float;
 out vec4 FragColor;
 
 flat in int vert_entity;
+flat in int vert_config;
 
 void main()
 {
+   // The entity instance mesh shader merges the entity UID and subcomponent
+   // UID into one number. The 8 MSB indicate the subcomponent UID. The 24
+   // remaining LSB indicate the entity UID.
+   int entity_sub_component = (vert_entity & 16777215) + (vert_config << 24);
    int mask = 255;
-   int ival0 = (vert_entity >> (8 * 0)) & mask;
-   int ival1 = (vert_entity >> (8 * 1)) & mask;
-   int ival2 = (vert_entity >> (8 * 2)) & mask;
-   int ival3 = (vert_entity >> (8 * 3)) & mask;
+   int ival0 = (entity_sub_component >> (8 * 0)) & mask;
+   int ival1 = (entity_sub_component >> (8 * 1)) & mask;
+   int ival2 = (entity_sub_component >> (8 * 2)) & mask;
+   int ival3 = (entity_sub_component >> (8 * 3)) & mask;
    float fval0 = float(ival0);
    fval0 = fval0 / 255.f;
    float fval1 = float(ival1);
@@ -91,8 +96,10 @@ void main()
 layout (location = 0) in vec3 pos;
 layout (location = 3) in mat4 model;
 layout (location = 7) in int entity;
+layout (location = 8) in int config;
 
 flat out int vert_entity;
+flat out int vert_config;
 
 uniform mat4 projection;
 uniform mat4 view;
@@ -102,6 +109,7 @@ void main()
 
   gl_Position = projection * view * model * vec4(pos, 1.0);
   vert_entity = entity;
+  vert_config = config;
 }
 #version 300 es
 precision mediump float;

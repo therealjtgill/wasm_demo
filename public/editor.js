@@ -190,7 +190,7 @@ Module['FS_createPath']("/", "glsl_es_shaders", true, true);
     }
 
     }
-    loadPackage({"files": [{"filename": "/glsl_es_shaders/basic_monochrome_instance_mesh.frag", "start": 0, "end": 817}, {"filename": "/glsl_es_shaders/basic_monochrome_instance_mesh.vert", "start": 817, "end": 1394}, {"filename": "/glsl_es_shaders/entity_instance_mesh_shader.frag", "start": 1394, "end": 2549}, {"filename": "/glsl_es_shaders/entity_instance_mesh_shader.vert", "start": 2549, "end": 2848}, {"filename": "/glsl_es_shaders/monochrome_instance_mesh.frag", "start": 2848, "end": 5436}, {"filename": "/glsl_es_shaders/monochrome_instance_mesh.vert", "start": 5436, "end": 6164}, {"filename": "/glsl_es_shaders/outline_mesh.frag", "start": 6164, "end": 7302}, {"filename": "/glsl_es_shaders/simple_depth_shader.frag", "start": 7302, "end": 7360}, {"filename": "/glsl_es_shaders/simple_depth_shader.vert", "start": 7360, "end": 7741}, {"filename": "/glsl_es_shaders/texture_mesh.frag", "start": 7741, "end": 8144}, {"filename": "/glsl_es_shaders/texture_mesh.vert", "start": 8144, "end": 8489}], "remote_package_size": 8489});
+    loadPackage({"files": [{"filename": "/glsl_es_shaders/basic_monochrome_instance_mesh.frag", "start": 0, "end": 817}, {"filename": "/glsl_es_shaders/basic_monochrome_instance_mesh.vert", "start": 817, "end": 1394}, {"filename": "/glsl_es_shaders/entity_instance_mesh_shader.frag", "start": 1394, "end": 2885}, {"filename": "/glsl_es_shaders/entity_instance_mesh_shader.vert", "start": 2885, "end": 3271}, {"filename": "/glsl_es_shaders/monochrome_instance_mesh.frag", "start": 3271, "end": 5859}, {"filename": "/glsl_es_shaders/monochrome_instance_mesh.vert", "start": 5859, "end": 6587}, {"filename": "/glsl_es_shaders/outline_mesh.frag", "start": 6587, "end": 7725}, {"filename": "/glsl_es_shaders/simple_depth_shader.frag", "start": 7725, "end": 7783}, {"filename": "/glsl_es_shaders/simple_depth_shader.vert", "start": 7783, "end": 8164}, {"filename": "/glsl_es_shaders/texture_mesh.frag", "start": 8164, "end": 8567}, {"filename": "/glsl_es_shaders/texture_mesh.vert", "start": 8567, "end": 8912}], "remote_package_size": 8912});
 
   })();
 
@@ -6955,8 +6955,6 @@ function dbg(text) {
 
   function _glTexParameteri(x0, x1, x2) { GLctx.texParameteri(x0, x1, x2) }
 
-  function _glTexStorage2D(x0, x1, x2, x3, x4) { GLctx.texStorage2D(x0, x1, x2, x3, x4) }
-
   var webglGetUniformLocation = (location) => {
       var p = GLctx.currentProgram;
   
@@ -8832,8 +8830,6 @@ var wasmImports = {
   glTexImage2D: _glTexImage2D,
   /** @export */
   glTexParameteri: _glTexParameteri,
-  /** @export */
-  glTexStorage2D: _glTexStorage2D,
   /** @export */
   glUniform1fv: _glUniform1fv,
   /** @export */
