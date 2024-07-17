@@ -122,6 +122,8 @@ var REMOTE_PACKAGE_SIZE = metadata['remote_package_size'];
       function assert(check, msg) {
         if (!check) throw msg + new Error().stack;
       }
+Module['FS_createPath']("/", "fonts", true, true);
+Module['FS_createPath']("/fonts", "something_fonty", true, true);
 Module['FS_createPath']("/", "glsl_es_shaders", true, true);
 
       /** @constructor */
@@ -190,7 +192,7 @@ Module['FS_createPath']("/", "glsl_es_shaders", true, true);
     }
 
     }
-    loadPackage({"files": [{"filename": "/glsl_es_shaders/basic_monochrome_instance_mesh.frag", "start": 0, "end": 817}, {"filename": "/glsl_es_shaders/basic_monochrome_instance_mesh.vert", "start": 817, "end": 1394}, {"filename": "/glsl_es_shaders/entity_instance_mesh_shader.frag", "start": 1394, "end": 2885}, {"filename": "/glsl_es_shaders/entity_instance_mesh_shader.vert", "start": 2885, "end": 3271}, {"filename": "/glsl_es_shaders/monochrome_instance_mesh.frag", "start": 3271, "end": 5859}, {"filename": "/glsl_es_shaders/monochrome_instance_mesh.vert", "start": 5859, "end": 6587}, {"filename": "/glsl_es_shaders/outline_mesh.frag", "start": 6587, "end": 7725}, {"filename": "/glsl_es_shaders/simple_depth_shader.frag", "start": 7725, "end": 7783}, {"filename": "/glsl_es_shaders/simple_depth_shader.vert", "start": 7783, "end": 8164}, {"filename": "/glsl_es_shaders/texture_mesh.frag", "start": 8164, "end": 8567}, {"filename": "/glsl_es_shaders/texture_mesh.vert", "start": 8567, "end": 8912}], "remote_package_size": 8912});
+    loadPackage({"files": [{"filename": "/fonts/font_json_generator.py", "start": 0, "end": 2523}, {"filename": "/fonts/something_fonty/awesomeface.png", "start": 2523, "end": 61800}, {"filename": "/fonts/something_fonty/bitmap_font_faces.json", "start": 61800, "end": 73312}, {"filename": "/fonts/something_fonty/fonty_bitmap.png", "start": 73312, "end": 134430}, {"filename": "/fonts/something_fonty/fonty_bitmap_black.png", "start": 134430, "end": 216066}, {"filename": "/fonts/something_fonty/fonty_bitmap_metadata.txt", "start": 216066, "end": 224401}, {"filename": "/glsl_es_shaders/basic_monochrome_instance_mesh.frag", "start": 224401, "end": 225218}, {"filename": "/glsl_es_shaders/basic_monochrome_instance_mesh.vert", "start": 225218, "end": 225969}, {"filename": "/glsl_es_shaders/entity_instance_mesh_shader.frag", "start": 225969, "end": 227460}, {"filename": "/glsl_es_shaders/entity_instance_mesh_shader.vert", "start": 227460, "end": 227846}, {"filename": "/glsl_es_shaders/glyph_instance.frag", "start": 227846, "end": 228168}, {"filename": "/glsl_es_shaders/glyph_instance.vert", "start": 228168, "end": 229569}, {"filename": "/glsl_es_shaders/monochrome_instance_mesh.frag", "start": 229569, "end": 231890}, {"filename": "/glsl_es_shaders/monochrome_instance_mesh.vert", "start": 231890, "end": 232905}, {"filename": "/glsl_es_shaders/outline_mesh.frag", "start": 232905, "end": 234043}, {"filename": "/glsl_es_shaders/simple_depth_shader.frag", "start": 234043, "end": 234101}, {"filename": "/glsl_es_shaders/simple_depth_shader.vert", "start": 234101, "end": 234482}, {"filename": "/glsl_es_shaders/texture_mesh.frag", "start": 234482, "end": 234885}, {"filename": "/glsl_es_shaders/texture_mesh.vert", "start": 234885, "end": 235276}], "remote_package_size": 235276});
 
   })();
 
@@ -6187,6 +6189,8 @@ function dbg(text) {
 
   function _glBlendEquationSeparate(x0, x1) { GLctx.blendEquationSeparate(x0, x1) }
 
+  function _glBlendFunc(x0, x1) { GLctx.blendFunc(x0, x1) }
+
   function _glBlendFuncSeparate(x0, x1, x2, x3) { GLctx.blendFuncSeparate(x0, x1, x2, x3) }
 
   var _glBufferData = (target, size, data, usage) => {
@@ -6397,6 +6401,8 @@ function dbg(text) {
 
   
   var _glGenVertexArraysOES = _glGenVertexArrays;
+
+  function _glGenerateMipmap(x0) { GLctx.generateMipmap(x0) }
 
   
   var _glGetAttribLocation = (program, name) => {
@@ -6828,6 +6834,13 @@ function dbg(text) {
       program.uniformLocsById = 0; // Mark as null-like so that glGetUniformLocation() knows to populate this again.
       program.uniformSizeAndIdsByName = {};
   
+    };
+
+  var _glPixelStorei = (pname, param) => {
+      if (pname == 0xCF5 /* GL_UNPACK_ALIGNMENT */) {
+        GL.unpackAlignment = param;
+      }
+      GLctx.pixelStorei(pname, param);
     };
 
   function _glReadBuffer(x0) { GLctx.readBuffer(x0) }
@@ -8739,6 +8752,8 @@ var wasmImports = {
   /** @export */
   glBlendEquationSeparate: _glBlendEquationSeparate,
   /** @export */
+  glBlendFunc: _glBlendFunc,
+  /** @export */
   glBlendFuncSeparate: _glBlendFuncSeparate,
   /** @export */
   glBufferData: _glBufferData,
@@ -8795,6 +8810,8 @@ var wasmImports = {
   /** @export */
   glGenVertexArraysOES: _glGenVertexArraysOES,
   /** @export */
+  glGenerateMipmap: _glGenerateMipmap,
+  /** @export */
   glGetAttribLocation: _glGetAttribLocation,
   /** @export */
   glGetError: _glGetError,
@@ -8818,6 +8835,8 @@ var wasmImports = {
   glIsProgram: _glIsProgram,
   /** @export */
   glLinkProgram: _glLinkProgram,
+  /** @export */
+  glPixelStorei: _glPixelStorei,
   /** @export */
   glReadBuffer: _glReadBuffer,
   /** @export */
@@ -8964,9 +8983,9 @@ var wasmImports = {
 var wasmExports = createWasm();
 var ___wasm_call_ctors = createExportWrapper('__wasm_call_ctors');
 var _main = Module['_main'] = createExportWrapper('main');
-var _fflush = Module['_fflush'] = createExportWrapper('fflush');
-var _malloc = createExportWrapper('malloc');
 var _free = createExportWrapper('free');
+var _malloc = createExportWrapper('malloc');
+var _fflush = Module['_fflush'] = createExportWrapper('fflush');
 var ___errno_location = createExportWrapper('__errno_location');
 var _emscripten_stack_init = () => (_emscripten_stack_init = wasmExports['emscripten_stack_init'])();
 var _emscripten_stack_get_free = () => (_emscripten_stack_get_free = wasmExports['emscripten_stack_get_free'])();
