@@ -124,7 +124,7 @@ var REMOTE_PACKAGE_SIZE = metadata['remote_package_size'];
       }
 Module['FS_createPath']("/", "fonts", true, true);
 Module['FS_createPath']("/fonts", "something_fonty", true, true);
-Module['FS_createPath']("/", "glsl_es_shaders", true, true);
+Module['FS_createPath']("/", "glsl_shaders", true, true);
 
       /** @constructor */
       function DataRequest(start, end, audio) {
@@ -192,7 +192,7 @@ Module['FS_createPath']("/", "glsl_es_shaders", true, true);
     }
 
     }
-    loadPackage({"files": [{"filename": "/fonts/font_json_generator.py", "start": 0, "end": 2523}, {"filename": "/fonts/something_fonty/awesomeface.png", "start": 2523, "end": 61800}, {"filename": "/fonts/something_fonty/bitmap_font_faces.json", "start": 61800, "end": 73312}, {"filename": "/fonts/something_fonty/fonty_bitmap.png", "start": 73312, "end": 134430}, {"filename": "/fonts/something_fonty/fonty_bitmap_black.png", "start": 134430, "end": 216066}, {"filename": "/fonts/something_fonty/fonty_bitmap_metadata.txt", "start": 216066, "end": 224401}, {"filename": "/glsl_es_shaders/basic_monochrome_instance_mesh.frag", "start": 224401, "end": 225218}, {"filename": "/glsl_es_shaders/basic_monochrome_instance_mesh.vert", "start": 225218, "end": 225969}, {"filename": "/glsl_es_shaders/entity_instance_mesh_shader.frag", "start": 225969, "end": 227460}, {"filename": "/glsl_es_shaders/entity_instance_mesh_shader.vert", "start": 227460, "end": 227846}, {"filename": "/glsl_es_shaders/glyph_instance.frag", "start": 227846, "end": 228168}, {"filename": "/glsl_es_shaders/glyph_instance.vert", "start": 228168, "end": 229569}, {"filename": "/glsl_es_shaders/monochrome_instance_mesh.frag", "start": 229569, "end": 231890}, {"filename": "/glsl_es_shaders/monochrome_instance_mesh.vert", "start": 231890, "end": 232905}, {"filename": "/glsl_es_shaders/outline_mesh.frag", "start": 232905, "end": 234043}, {"filename": "/glsl_es_shaders/simple_depth_shader.frag", "start": 234043, "end": 234101}, {"filename": "/glsl_es_shaders/simple_depth_shader.vert", "start": 234101, "end": 234482}, {"filename": "/glsl_es_shaders/texture_mesh.frag", "start": 234482, "end": 234885}, {"filename": "/glsl_es_shaders/texture_mesh.vert", "start": 234885, "end": 235276}], "remote_package_size": 235276});
+    loadPackage({"files": [{"filename": "/fonts/something_fonty/awesomeface.png", "start": 0, "end": 59277}, {"filename": "/fonts/something_fonty/bitmap_font_faces.json", "start": 59277, "end": 70789}, {"filename": "/fonts/something_fonty/fonty_bitmap.png", "start": 70789, "end": 131907}, {"filename": "/glsl_shaders/basic_monochrome_instance_mesh.frag", "start": 131907, "end": 132695}, {"filename": "/glsl_shaders/basic_monochrome_instance_mesh.vert", "start": 132695, "end": 133359}, {"filename": "/glsl_shaders/entity_instance_mesh_shader.frag", "start": 133359, "end": 134850}, {"filename": "/glsl_shaders/entity_instance_mesh_shader.vert", "start": 134850, "end": 135236}, {"filename": "/glsl_shaders/glyph_instance.frag", "start": 135236, "end": 135558}, {"filename": "/glsl_shaders/glyph_instance.vert", "start": 135558, "end": 136959}, {"filename": "/glsl_shaders/monochrome_instance_mesh.frag", "start": 136959, "end": 139280}, {"filename": "/glsl_shaders/monochrome_instance_mesh.vert", "start": 139280, "end": 140295}, {"filename": "/glsl_shaders/outline_mesh.frag", "start": 140295, "end": 141433}, {"filename": "/glsl_shaders/simple_depth_shader.frag", "start": 141433, "end": 141491}, {"filename": "/glsl_shaders/simple_depth_shader.vert", "start": 141491, "end": 141872}, {"filename": "/glsl_shaders/skybox.frag", "start": 141872, "end": 143521}, {"filename": "/glsl_shaders/texture_mesh.frag", "start": 143521, "end": 143924}, {"filename": "/glsl_shaders/texture_mesh.vert", "start": 143924, "end": 144315}], "remote_package_size": 144315});
 
   })();
 
@@ -6843,7 +6843,13 @@ function dbg(text) {
       GLctx.pixelStorei(pname, param);
     };
 
-  function _glReadBuffer(x0) { GLctx.readBuffer(x0) }
+  function _glScissor(x0, x1, x2, x3) { GLctx.scissor(x0, x1, x2, x3) }
+
+  var _glShaderSource = (shader, count, string, length) => {
+      var source = GL.getSource(shader, count, string, length);
+  
+      GLctx.shaderSource(GL.shaders[shader], source);
+    };
 
   var computeUnpackAlignedImageSize = (width, height, sizePerPixel, alignment) => {
       function roundedToNextMultipleOf(x, y) {
@@ -6918,37 +6924,6 @@ function dbg(text) {
   
   
   
-  var _glReadPixels = (x, y, width, height, format, type, pixels) => {
-      if (GL.currentContext.version >= 2) {
-        // WebGL 2 provides new garbage-free entry points to call to WebGL. Use
-        // those always when possible.
-        if (GLctx.currentPixelPackBufferBinding) {
-          GLctx.readPixels(x, y, width, height, format, type, pixels);
-        } else {
-          var heap = heapObjectForWebGLType(type);
-          GLctx.readPixels(x, y, width, height, format, type, heap, pixels >> heapAccessShiftForWebGLHeap(heap));
-        }
-        return;
-      }
-      var pixelData = emscriptenWebGLGetTexPixelData(type, format, width, height, pixels, format);
-      if (!pixelData) {
-        GL.recordError(0x500/*GL_INVALID_ENUM*/);
-        return;
-      }
-      GLctx.readPixels(x, y, width, height, format, type, pixelData);
-    };
-
-  function _glScissor(x0, x1, x2, x3) { GLctx.scissor(x0, x1, x2, x3) }
-
-  var _glShaderSource = (shader, count, string, length) => {
-      var source = GL.getSource(shader, count, string, length);
-  
-      GLctx.shaderSource(GL.shaders[shader], source);
-    };
-
-  
-  
-  
   var _glTexImage2D = (target, level, internalFormat, width, height, border, format, type, pixels) => {
       if (GL.currentContext.version >= 2) {
         // WebGL 2 provides new garbage-free entry points to call to WebGL. Use
@@ -7012,6 +6987,11 @@ function dbg(text) {
   
   var _glUniform1i = (location, v0) => {
       GLctx.uniform1i(webglGetUniformLocation(location), v0);
+    };
+
+  
+  var _glUniform2f = (location, v0, v1) => {
+      GLctx.uniform2f(webglGetUniformLocation(location), v0, v1);
     };
 
   
@@ -8838,10 +8818,6 @@ var wasmImports = {
   /** @export */
   glPixelStorei: _glPixelStorei,
   /** @export */
-  glReadBuffer: _glReadBuffer,
-  /** @export */
-  glReadPixels: _glReadPixels,
-  /** @export */
   glScissor: _glScissor,
   /** @export */
   glShaderSource: _glShaderSource,
@@ -8853,6 +8829,8 @@ var wasmImports = {
   glUniform1fv: _glUniform1fv,
   /** @export */
   glUniform1i: _glUniform1i,
+  /** @export */
+  glUniform2f: _glUniform2f,
   /** @export */
   glUniform3fv: _glUniform3fv,
   /** @export */
@@ -8997,6 +8975,7 @@ var stackAlloc = createExportWrapper('stackAlloc');
 var _emscripten_stack_get_current = () => (_emscripten_stack_get_current = wasmExports['emscripten_stack_get_current'])();
 var ___cxa_is_pointer_type = createExportWrapper('__cxa_is_pointer_type');
 var dynCall_vij = Module['dynCall_vij'] = createExportWrapper('dynCall_vij');
+var dynCall_vijj = Module['dynCall_vijj'] = createExportWrapper('dynCall_vijj');
 var dynCall_jiji = Module['dynCall_jiji'] = createExportWrapper('dynCall_jiji');
 var dynCall_viijii = Module['dynCall_viijii'] = createExportWrapper('dynCall_viijii');
 var dynCall_iiiiij = Module['dynCall_iiiiij'] = createExportWrapper('dynCall_iiiiij');
